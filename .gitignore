@@ -1,2 +1,9 @@
+# Arquivos de Ambiente
+.env
+
+# Cache e dependências do Python
+__pycache__/
+*.pyc
+.venv
 venv/
 .vscode/
