@@ -4,3 +4,4 @@ numpy
 matplotlib
 supabase
 python-dotenv
+streamlit-authenticator

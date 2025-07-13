@@ -1,6 +1,7 @@
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
+from datetime import date
 
 class SupabaseClient:
     def __init__(self):
@@ -9,9 +10,18 @@ class SupabaseClient:
         self.SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
         self.supabase: Client = create_client(self.SUPABASE_URL, self.SUPABASE_ANON_KEY)
 
-    def getSpendingsByPhoneNumber(self, phoneNumber: str) -> list:
+    def getSpendings(self, phoneNumber: str, startDate:date, endDate:date) -> list:
         try:
-            response = self.supabase.table("spending").select("*").eq("client_phone_number", phoneNumber).execute()
+            response = (
+                self.supabase.table("spending")
+                .select(
+                    "spending_value,spending_category,spending_date,spending_description",
+                )
+                .eq("client_phone_number", phoneNumber)
+                .gte("spending_date", startDate.isoformat())
+                .lte("spending_date", endDate.isoformat())
+                .execute()
+            )
             return response.data
         except Exception as e:
             print(f"Ocorreu um erro ao buscar os gastos: {e}")
