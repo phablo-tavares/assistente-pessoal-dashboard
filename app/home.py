@@ -26,6 +26,9 @@ if "end_date_widget" not in st.session_state:
 
 if "supabaseClient" not in st.session_state:
     st.session_state.supabaseClient = SupabaseClient()
+if "currentUser" not in st.session_state:
+    st.session_state.currentUser = None
+
     
 def getClientSpendings():
     st.session_state.clientSpendings = st.session_state.supabaseClient.getSpendings(
@@ -113,105 +116,131 @@ def getLineChartDataFrame():
     )
     
     return finalDf
+
+
+def authScreen():
+    st.title("Dashboard Agente Pessoal - by Carp.IA")
+    option = st.radio("Escolha uma ação:", ["Login", "Cadastro"],horizontal=True)
+    email = st.text_input("Email")
+    password = st.text_input("Senha", type="password")
+
+    if option == "Cadastro" and st.button("Cadastro"):
+        user = st.session_state.supabaseClient.signUp(email, password)
+        if user:
+            st.success("Cadastro feito com sucesso. Por favor, clique no link de confirmação enviado no seu email para validar seu cadastro. Após isso é só fazer login!")
+
+    if option == "Login" and st.button("Login"):
+        user = st.session_state.supabaseClient.signIn(email, password)
+        if user:
+            st.session_state.currentUser = user
+            st.success(f"Welcome back, {email}!")
+            st.rerun()
+
    
+def homePage():
+    if st.session_state.spendingDataFetched == False:
+        with st.spinner('Carregando...'):
+            getClientSpendings()
+            st.rerun()
+    else:
+        st.title('Dashboard Agente Pessoal - by Carp.IA')
+        st.write('')
+        st.markdown("""
+        Bem vindo ao dashboard do seu agente pessoal, aqui você vê informações sobre os seus gastos registrados pelo whatsapp.
+                    
+        Selecionando uma data de início e data de fim, você consegue visualizar informações sobre os gastos registrados nesse período.
+        """)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        
 
-if st.session_state.spendingDataFetched == False:
-    with st.spinner('Carregando...'):
-        getClientSpendings()
-        st.rerun()
-else:
-
-    st.title('Dashboard Agente Pessoal - by Carp.IA')
-    st.write('')
-    st.markdown("""
-    Bem vindo ao dashboard do seu agente pessoal, aqui você vê informações sobre os seus gastos registrados pelo whatsapp.
-                
-    Selecionando uma data de início e data de fim, você consegue visualizar informações sobre os gastos registrados nesse período.
-    """)
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-
-    # --- Dates Input ---
-    datesInput,spacer = st.columns([1,3])
-    with datesInput:
-        startDateInput,endDateInput = st.columns(2)
-        with startDateInput:
-            st.date_input(
-                key='start_date_widget',
-                label="Data de Início",
-                on_change=update_dates,
-                max_value=st.session_state.endDate,
-                width=200
-            )
-        with endDateInput:
-            st.date_input(
-                key='end_date_widget',
-                label="Data de Fim",
-                on_change=update_dates,
-                min_value=st.session_state.startDate,
-                width=200
-            )
-    
-    barChartTab,pieChartTab,lineChartTab = st.tabs(["Gastos por Categoria", "Composição dos Gastos","Evolução dos Gastos por Categoria"])
-
-    with barChartTab:
-        # --- Bar Chart ---
-        barChart = alt.Chart(getDataFrameBarChart()).mark_bar(
-            cornerRadiusTopLeft=3,
-            cornerRadiusTopRight=3
-        ).encode(
-            x=alt.X('Categoria:N', title='Categoria', sort=None),
-            y=alt.Y('Valor Gasto (R$):Q', title='Valor Gasto (R$)', scale=alt.Scale(zero=True)),
-            color=alt.Color('colors:N', scale=None)
-        ).configure_axis(
-            grid=False
-        ).configure_view(
-            strokeWidth=0
-        ).properties(
-            height=500  
-        )
-        st.altair_chart(barChart, use_container_width=True)
-
-    with pieChartTab:
-        df_pie_chart = getDataFrameBarChart()
-        pie_chart = alt.Chart(df_pie_chart).mark_arc(
-            innerRadius=90,
-            cornerRadius=5
-        ).encode(
-            theta=alt.Theta(field="Valor Gasto (R$)", type="quantitative"),
-            color=alt.Color('Categoria:N',
-                scale=alt.Scale(
-                    domain=df_pie_chart['Categoria'].tolist(),
-                    range=df_pie_chart['colors'].tolist() 
-                ),
-                legend=alt.Legend(
-                    title="Categorias",
-                    orient="right" 
+        # --- Dates Input ---
+        datesInput,spacer = st.columns([1,3])
+        with datesInput:
+            startDateInput,endDateInput = st.columns(2)
+            with startDateInput:
+                st.date_input(
+                    key='start_date_widget',
+                    label="Data de Início",
+                    on_change=update_dates,
+                    max_value=st.session_state.endDate,
+                    width=200
                 )
-            ),
-            tooltip=['Categoria', 'Valor Gasto (R$)']
+            with endDateInput:
+                st.date_input(
+                    key='end_date_widget',
+                    label="Data de Fim",
+                    on_change=update_dates,
+                    min_value=st.session_state.startDate,
+                    width=200
+                )
+        
+        barChartTab,pieChartTab,lineChartTab = st.tabs(["Gastos por Categoria", "Composição dos Gastos","Evolução dos Gastos por Categoria"])
 
-        ).configure_view(
-            strokeWidth=0
-        ).properties(
-            height=500
-        )
-        st.altair_chart(pie_chart, use_container_width=True)
+        with barChartTab:
+            # --- Bar Chart ---
+            barChart = alt.Chart(getDataFrameBarChart()).mark_bar(
+                cornerRadiusTopLeft=3,
+                cornerRadiusTopRight=3
+            ).encode(
+                x=alt.X('Categoria:N', title='Categoria', sort=None),
+                y=alt.Y('Valor Gasto (R$):Q', title='Valor Gasto (R$)', scale=alt.Scale(zero=True)),
+                color=alt.Color('colors:N', scale=None)
+            ).configure_axis(
+                grid=False
+            ).configure_view(
+                strokeWidth=0
+            ).properties(
+                height=500  
+            )
+            st.altair_chart(barChart, use_container_width=True)
 
-    with lineChartTab:
-        # --- Line Chart ---
-        lineChart = alt.Chart(getLineChartDataFrame()).mark_line().encode(
-            x=alt.X('Data:T', title='Data'),
-            y=alt.Y('Total Acumulado (R$):Q', title='Total Acumulado (R$)', scale=alt.Scale(zero=True)),
-            color=alt.Color('Categoria:N', title='Categoria'),
-            tooltip=['Data', 'Categoria', 'Total Acumulado (R$)']
+        with pieChartTab:
+            df_pie_chart = getDataFrameBarChart()
+            pie_chart = alt.Chart(df_pie_chart).mark_arc(
+                innerRadius=90,
+                cornerRadius=5
+            ).encode(
+                theta=alt.Theta(field="Valor Gasto (R$)", type="quantitative"),
+                color=alt.Color('Categoria:N',
+                    scale=alt.Scale(
+                        domain=df_pie_chart['Categoria'].tolist(),
+                        range=df_pie_chart['colors'].tolist() 
+                    ),
+                    legend=alt.Legend(
+                        title="Categorias",
+                        orient="right" 
+                    )
+                ),
+                tooltip=['Categoria', 'Valor Gasto (R$)']
 
-        ).properties(
-            height=500
-        ).configure_axis(
-            grid=False
-        ).configure_view(
-            strokeWidth=0
-        ).interactive()
+            ).configure_view(
+                strokeWidth=0
+            ).properties(
+                height=500
+            )
+            st.altair_chart(pie_chart, use_container_width=True)
 
-        st.altair_chart(lineChart, use_container_width=True)
+        with lineChartTab:
+            # --- Line Chart ---
+            lineChart = alt.Chart(getLineChartDataFrame()).mark_line().encode(
+                x=alt.X('Data:T', title='Data'),
+                y=alt.Y('Total Acumulado (R$):Q', title='Total Acumulado (R$)', scale=alt.Scale(zero=True)),
+                color=alt.Color('Categoria:N', title='Categoria'),
+                tooltip=['Data', 'Categoria', 'Total Acumulado (R$)']
+
+            ).properties(
+                height=500
+            ).configure_axis(
+                grid=False
+            ).configure_view(
+                strokeWidth=0
+            ).interactive()
+
+            st.altair_chart(lineChart, use_container_width=True)
+
+
+
+if st.session_state.currentUser:
+    homePage()
+else:
+    authScreen()

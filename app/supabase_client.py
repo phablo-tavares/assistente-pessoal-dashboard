@@ -2,6 +2,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 from datetime import date
+import streamlit as st 
 
 class SupabaseClient:
     def __init__(self):
@@ -9,6 +10,38 @@ class SupabaseClient:
         self.SUPABASE_URL = os.getenv("SUPABASE_URL")
         self.SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
         self.supabase: Client = create_client(self.SUPABASE_URL, self.SUPABASE_ANON_KEY)
+
+    def signUp(self,email:str, password:str):
+        try:
+            user = self.supabase.auth.sign_up(
+                {
+                    "email":email,
+                    "password":password,
+                }
+            )
+            return user.user
+        except Exception as e:
+            st.error(f'Erro no cadastro, tente novamente mais tarde')
+    
+    def signIn(self,email:str, password:str):
+        try:
+            user = self.supabase.auth.sign_in_with_password(
+                {
+                    "email":email,
+                    "password":password,
+                }
+            )
+            return user.user
+        except Exception as e:
+            st.error(f'Erro no login, tente novamente mais tarde')
+    
+    def signOut(self,email:str, password:str):
+        try:
+            self.supabase.auth.sign_out()
+            st.session_state.userEmail = None
+            st.rerun()
+        except Exception as e:
+            st.error(f'Erro no logout, tente novamente mais tarde')
 
     def getSpendings(self, phoneNumber: str, startDate:date, endDate:date) -> list:
         try:
