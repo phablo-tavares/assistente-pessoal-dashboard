@@ -12,37 +12,51 @@ class SupabaseClient:
         self.supabase: Client = create_client(self.SUPABASE_URL, self.SUPABASE_ANON_KEY)
 
     def signUp(self,email:str, password:str):
-        try:
-            user = self.supabase.auth.sign_up(
-                {
-                    "email":email,
-                    "password":password,
-                }
-            )
-            return user.user
-        except Exception as e:
-            st.error(f'Erro no cadastro, tente novamente mais tarde')
+        user = self.supabase.auth.sign_up(
+            {
+                "email":email,
+                "password":password,
+            }
+        )
+        return user.user
     
     def signIn(self,email:str, password:str):
-        try:
-            user = self.supabase.auth.sign_in_with_password(
-                {
-                    "email":email,
-                    "password":password,
-                }
-            )
-            return user.user
-        except Exception as e:
-            st.error(f'Erro no login, tente novamente mais tarde')
+        user = self.supabase.auth.sign_in_with_password(
+            {
+                "email":email,
+                "password":password,
+            }
+        )
+        return user.user
     
-    def signOut(self,email:str, password:str):
-        try:
-            self.supabase.auth.sign_out()
-            st.session_state.userEmail = None
-            st.rerun()
-        except Exception as e:
-            st.error(f'Erro no logout, tente novamente mais tarde')
+    def signOut(self):
+        self.supabase.auth.sign_out()
+        st.session_state.currentUser = None
+        st.rerun()
 
+    def sendResetPasswordEmail(self,email:str):
+        self.supabase.auth.reset_password_email(email=email,options={'redirect_to': st.get_option('server.baseUrlPath')})
+    
+    def resetPassword(self,access_token: str,refresh_token:str,password:str):
+        self.supabase.auth.set_session(access_token,refresh_token)
+        self.supabase.auth.update_user({'password': password})
+
+    def getClientData(self,authUserId: str):
+        try:
+            response = (
+                self.supabase.table("clients")
+                .select(
+                    "phone_number,full_name,cpf,active_subscription,email",
+                )
+                .eq("auth_user_id", authUserId)
+                .execute()
+            )
+            return response.data
+        except Exception as e:
+            print(f"Ocorreu um erro ao buscar os dados do cliente: {e}")
+            return []
+
+    #TODO melhorar essa tratativa de exceções
     def getSpendings(self, phoneNumber: str, startDate:date, endDate:date) -> list:
         try:
             response = (

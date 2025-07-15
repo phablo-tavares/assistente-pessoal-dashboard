@@ -1,7 +1,6 @@
 streamlit
 pandas
-numpy
-matplotlib
 supabase
 python-dotenv
 streamlit-authenticator
+email_validator

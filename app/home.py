@@ -3,6 +3,7 @@ from supabase_client import SupabaseClient
 import pandas as pd
 from datetime import date, timedelta
 import altair as alt
+from email_validator import validate_email
 
 st.set_page_config(
     layout="wide",
@@ -29,14 +30,38 @@ if "supabaseClient" not in st.session_state:
 if "currentUser" not in st.session_state:
     st.session_state.currentUser = None
 
-    
+if "clientData" not in st.session_state:
+    st.session_state.clientData = None
+
+if 'access_token' not in st.session_state:
+    st.session_state.access_token = None
+if 'refresh_token' not in st.session_state:
+    st.session_state.refresh_token = None
+if 'redefine_password_flux' not in st.session_state:
+    st.session_state.redefine_password_flux = False
+
+
+access_token = st.query_params.get("access_token")
+refresh_token = st.query_params.get("refresh_token")
+if access_token and refresh_token and st.session_state.redefine_password_flux == False:
+    st.session_state.redefine_password_flux = True
+    st.session_state.access_token = access_token
+    st.session_state.refresh_token = refresh_token
+
+
+
+def getClientData():
+    authUserId = st.session_state.currentUser.id
+    clientData = st.session_state.supabaseClient.getClientData(authUserId=authUserId)[0]
+    st.session_state.clientData = clientData
+
 def getClientSpendings():
-    st.session_state.clientSpendings = st.session_state.supabaseClient.getSpendings(
-        phoneNumber='556299035665',
+    clientSpendings = st.session_state.supabaseClient.getSpendings(
+        phoneNumber=st.session_state.clientData['phone_number'],
         startDate=st.session_state.startDate,
         endDate=st.session_state.endDate,
     )
-    st.session_state.spendingDataFetched = True
+    st.session_state.clientSpendings = clientSpendings
 
 def update_dates():
     st.session_state.startDate = st.session_state.start_date_widget
@@ -117,32 +142,132 @@ def getLineChartDataFrame():
     
     return finalDf
 
+def isEmailValid(email:str) -> bool:
+    try:
+        validate_email(email,check_deliverability=True)
+        return True
+    except:
+        return False 
+    
+def isPasswordValid(password:str) ->bool:
+    return len(password) >= 6
+    
+def doSignUp(email:str, password: str):
+    if not email or not password:
+        st.warning('Preencha todos os campos')
+    else:
+        validEmail = isEmailValid(email=email)
+        validPassword = isPasswordValid(password=password)
+        if not validEmail:
+            st.toast('Email inválido')
+        if not validPassword:
+            st.toast('Senha deve conter mais de 6 dígitos')
 
+        if validEmail and validPassword:
+            try:
+                user = st.session_state.supabaseClient.signUp(email, password)
+                if user:
+                    st.success("Cadastro feito com sucesso. Por favor, clique no link de confirmação enviado no seu email para validar seu cadastro. Após isso é só fazer login!")
+            except Exception as e:
+                st.error('Erro no cadastro, tente novamente mais tarde')
+
+def doLogin(email:str, password: str):
+    if not email or not password:
+        st.warning('Preencha todos os campos')
+    else:
+        validEmail = isEmailValid(email=email)
+        validPassword = isPasswordValid(password=password)
+        if not validEmail:
+            st.toast('Email inválido')
+        if not validPassword:
+            st.toast('Senha deve conter mais de 6 dígitos')
+
+        if validEmail and validPassword:
+            try:
+                user = st.session_state.supabaseClient.signIn(email, password)
+                if user:
+                    st.session_state.currentUser = user
+                    st.rerun()
+            except Exception as e:
+                if e.code == 'invalid_credentials':
+                    st.error('Credenciais inválidas! Verifique o email e a senha e tente novamente.')
+                else:
+                    if e.code == 'email_not_confirmed':
+                        st.error('Email não verificado! Por favor cheque sua caixa de email e após a verificação faça o login.')
+                    else:
+                        st.error('erro no login, tente novamente mais tarde')
+
+
+def doSendResetPasswordEmail(email:str):
+    if not email:
+        st.warning('Preencha o email')
+    else:
+        validEmail = isEmailValid(email=email)
+        if not validEmail:
+            st.toast('Email inválido')
+        if validEmail:
+            try:
+                st.session_state.supabaseClient.sendResetPasswordEmail(email=email)
+                st.success('Enviado email para redefinição de senha. Acesse sua caixa de email e clique no link')
+            except Exception as e:
+                st.error('Erro enviando e-mail para redefinição de senha. tente novamente mais tarde.')
+
+def doRedefinePassword(password:str):
+    try:
+        st.session_state.supabaseClient.resetPassword(password=password,access_token=st.session_state.access_token,refresh_token=st.session_state.refresh_token)
+        st.session_state.redefine_password_flux = False
+        st.success('Senha redefinida com sucesso')
+        st.rerun()
+    except Exception as e:
+        st.error('Erro redefinindo senha. tente novamente mais tarde.')
+    
 def authScreen():
-    st.title("Dashboard Agente Pessoal - by Carp.IA")
-    option = st.radio("Escolha uma ação:", ["Login", "Cadastro"],horizontal=True)
-    email = st.text_input("Email")
-    password = st.text_input("Senha", type="password")
+    st.title("Agente Pessoal - by Carp.IA")
+    option = st.radio(label="", options=["Login", "Cadastro", "Esqueci minha senha"],horizontal=True)
 
-    if option == "Cadastro" and st.button("Cadastro"):
-        user = st.session_state.supabaseClient.signUp(email, password)
-        if user:
-            st.success("Cadastro feito com sucesso. Por favor, clique no link de confirmação enviado no seu email para validar seu cadastro. Após isso é só fazer login!")
+    if option == "Login":
+        with st.form("form"):
+            email = st.text_input("Email")
+            password = st.text_input("Senha", type="password")
+            loginButton = st.form_submit_button("Login")
+            if loginButton:
+                doLogin(email=email,password=password)
 
-    if option == "Login" and st.button("Login"):
-        user = st.session_state.supabaseClient.signIn(email, password)
-        if user:
-            st.session_state.currentUser = user
-            st.success(f"Welcome back, {email}!")
-            st.rerun()
+    elif option == "Cadastro":
+        with st.form("form"):
+            email = st.text_input("Email")
+            password = st.text_input("Senha", type="password")
+            signUpButton = st.form_submit_button("Cadastro")
+            if signUpButton:
+                doSignUp(email=email,password=password)
 
-   
+    elif option == "Esqueci minha senha":
+        with st.form("form"):
+            email = st.text_input("Email")
+            sendResetEmailButton = st.form_submit_button("Enviar email de redefinição de senha")
+            if sendResetEmailButton:
+                doSendResetPasswordEmail(email=email)
+
+def redefinePasswordScreen():
+    st.title("Agente Pessoal - by Carp.IA")
+    with st.form("form"):
+        password = st.text_input("Senha", type="password")
+        loginButton = st.form_submit_button("Redefinir senha")
+        if loginButton:
+            doRedefinePassword(password=password)
+
 def homePage():
     if st.session_state.spendingDataFetched == False:
         with st.spinner('Carregando...'):
+            getClientData()
             getClientSpendings()
+            st.session_state.spendingDataFetched = True
             st.rerun()
     else:
+        if st.sidebar.button("Sair"):
+            st.session_state.spendingDataFetched = False
+            st.session_state.supabaseClient.signOut()
+
         st.title('Dashboard Agente Pessoal - by Carp.IA')
         st.write('')
         st.markdown("""
@@ -151,7 +276,6 @@ def homePage():
         Selecionando uma data de início e data de fim, você consegue visualizar informações sobre os gastos registrados nesse período.
         """)
         st.markdown("<br><br>", unsafe_allow_html=True)
-        
 
         # --- Dates Input ---
         datesInput,spacer = st.columns([1,3])
@@ -239,8 +363,9 @@ def homePage():
             st.altair_chart(lineChart, use_container_width=True)
 
 
-
-if st.session_state.currentUser:
+if st.session_state.redefine_password_flux:
+    redefinePasswordScreen()
+elif st.session_state.currentUser:
     homePage()
 else:
     authScreen()
