@@ -31,7 +31,6 @@ if "supabaseClient" not in st.session_state:
     st.session_state.supabaseClient = SupabaseClient()
 if "currentUser" not in st.session_state:
     st.session_state.currentUser = None
-
 if "clientData" not in st.session_state:
     st.session_state.clientData = None
 
@@ -43,6 +42,7 @@ if 'redefine_password_flux' not in st.session_state:
     st.session_state.redefine_password_flux = False
 
 
+
 access_token = st.query_params.get("access_token")
 refresh_token = st.query_params.get("refresh_token")
 if access_token and refresh_token and st.session_state.redefine_password_flux == False:
@@ -50,7 +50,7 @@ if access_token and refresh_token and st.session_state.redefine_password_flux ==
     st.session_state.access_token = access_token
     st.session_state.refresh_token = refresh_token
 
-def getClientData():
+def getCurrentClientData():
     authUserId = st.session_state.currentUser.id
     clientData = st.session_state.supabaseClient.getClientData(authUserId=authUserId)[0]
     st.session_state.clientData = clientData
@@ -152,6 +152,13 @@ def isEmailValid(email:str) -> bool:
 def isPasswordValid(password:str) ->bool:
     return len(password) >= 6
 
+def isWhatsappInUse(whatsapp:str):
+    try:
+        phoneNumberAlreadyInUse = st.session_state.supabaseClient.phoneNumberAlreadyInUse(phoneNumber=whatsapp)
+        return phoneNumberAlreadyInUse
+    except Exception as e:
+        return False
+
 def isWhatsappValid(whatsapp:str):
     return len(whatsapp) >= 7
 def isCPFValid(cpf:str):
@@ -165,6 +172,7 @@ def doSignUp(email:str, password: str, fullName:str, whatsapp:str,cpf:str):
         validPassword = isPasswordValid(password=password)
         validWhatsapp = isWhatsappValid(whatsapp=whatsapp)
         validCPF = isCPFValid(cpf=cpf)
+        whatsappInUse = isWhatsappInUse(whatsapp=whatsapp)
 
         if not validEmail:
             st.toast('Email inválido')
@@ -172,10 +180,12 @@ def doSignUp(email:str, password: str, fullName:str, whatsapp:str,cpf:str):
             st.toast('Senha deve conter mais de 6 dígitos')
         if not validWhatsapp:
             st.toast('Número de whatsapp deve ter 7 ou mais números')
+        if whatsappInUse:
+            st.toast('Número de whatsapp já cadastrado')
         if not validCPF:
             st.toast('CPF deve conter 11 números')
 
-        if validEmail and validPassword and validWhatsapp and validCPF:
+        if validEmail and validPassword and validWhatsapp and validCPF and not whatsappInUse:
             try:
                 response = st.session_state.supabaseClient.signUp(email, password)
                 user = response.user
@@ -293,7 +303,7 @@ def redefinePasswordScreen():
 def homePage():
     if st.session_state.spendingDataFetched == False:
         with st.spinner('Carregando...'):
-            getClientData()
+            getCurrentClientData()
             getClientSpendings()
             st.session_state.spendingDataFetched = True
             st.rerun()
@@ -423,12 +433,16 @@ def formatNumericCpfEditPersoalData():
 def doUpdatePersonalData(fullName:str,whatsappNumber:str,cpf:str):
     validWhatsapp = isWhatsappValid(whatsapp=whatsappNumber)
     validCPF = isCPFValid(cpf=cpf)
+    whatsappInUse = isWhatsappInUse(whatsapp=whatsappNumber)
 
     if not validWhatsapp:
         st.toast('Número de whatsapp deve ter 7 ou mais números')
+    if whatsappInUse:
+        st.toast('Número de whatsapp já cadastrado')
     if not validCPF:
         st.toast('CPF deve conter 11 números')
-    if validCPF and validWhatsapp:
+        
+    if validCPF and validWhatsapp and not whatsappInUse:
         try:
             st.session_state.supabaseClient.updateClientData(
                 phoneNumber=whatsappNumber,
@@ -437,7 +451,7 @@ def doUpdatePersonalData(fullName:str,whatsappNumber:str,cpf:str):
                 authUserId=st.session_state.currentUser.id,
                 active_subscription=None,
             )
-            getClientData()
+            getCurrentClientData()
             st.success("Dados pessoais atualizados com sucesso!")
         except Exception as e:
             st.error('Erro ao atualizar dados pessoais, tente novamente mais tarde.')
@@ -468,6 +482,63 @@ def editPersonalDataPage():
     if saveButton:
         doUpdatePersonalData(fullName=fullName,whatsappNumber=whatsappNumber,cpf=cpf)
 
+def getAllClientsData():
+    clientsData = st.session_state.supabaseClient.getAllClientData()
+    st.session_state.allClientsData = clientsData
+
+
+def toggleSubscriptionStatus(clientId:int,newStatus:bool,clientName:str):
+    try:
+        with st.spinner():
+            st.session_state.supabaseClient.updateClientSubscriptionStatus(clientId=clientId,newStatus=newStatus)
+    except Exception as e:
+        st.toast('Erro mudando status da assinatura. Tente novamente mais tarde.')
+        toggle_key = f'toggle_active_subscription{clientId}'
+        st.session_state[toggle_key] = not newStatus
+        for client in st.session_state.allClientsData:
+            if client['id'] == clientId:
+                client['active_subscription'] = not newStatus
+                break
+    
+    for client in st.session_state.allClientsData:
+        if client['id'] == clientId:
+            client['active_subscription'] = newStatus
+            break
+            
+
+def managementDashboard():
+    if "allClientsData" not in st.session_state:
+        st.session_state.allClientsData = []
+
+    with st.spinner('Carregando...'):
+        getCurrentClientData()
+        getAllClientsData()
+    st.title("Gerenciamento de usuários")
+
+    for clientData in st.session_state.allClientsData:
+        with st.container(border=True):
+            name,cpf,phoneNumber,activeSubscription = st.columns(4)
+            with name:
+                st.write(clientData['full_name'])
+            with cpf:
+                st.write(clientData['cpf'])
+            with phoneNumber:
+                st.write(clientData['phone_number'])
+            with activeSubscription:
+                st.toggle(
+                    label='Assinatura Ativa',
+                    key=f'toggle_active_subscription{clientData['id']}',
+                    value=clientData['active_subscription'],
+                    width='stretch',
+                    on_change=toggleSubscriptionStatus,
+                    kwargs={
+                        'clientId':clientData['id'],
+                        'newStatus':not clientData['active_subscription'],
+                        'clientName':clientData['full_name'],
+                    }
+                )
+
+
 if st.session_state.redefine_password_flux:
     redefinePasswordScreen()
 elif st.session_state.currentUser:
@@ -481,7 +552,10 @@ elif st.session_state.currentUser:
             st.session_state.spendingDataFetched = False
             st.session_state.supabaseClient.signOut()
     if pagina_selecionada == "Dashboard":
-        homePage()
+        if st.session_state.currentUser.email == 'agentepessoalcarpia@gmail.com':
+            managementDashboard()
+        else:
+            homePage()
     elif pagina_selecionada == "Editar Dados Pessoais":
         editPersonalDataPage()
 else:
