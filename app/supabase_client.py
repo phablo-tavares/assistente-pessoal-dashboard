@@ -9,16 +9,28 @@ class SupabaseClient:
         load_dotenv() 
         self.SUPABASE_URL = os.getenv("SUPABASE_URL")
         self.SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-        self.supabase: Client = create_client(self.SUPABASE_URL, self.SUPABASE_ANON_KEY)
+        self.SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        self.supabase: Client = create_client(self.SUPABASE_URL, self.SERVICE_ROLE_KEY)
 
     def signUp(self,email:str, password:str):
-        user = self.supabase.auth.sign_up(
+        response = self.supabase.auth.sign_up(
             {
                 "email":email,
                 "password":password,
             }
         )
-        return user.user
+        return response
+
+    def updateClientData(self, authUserId:str, fullName:str, phoneNumber:str, cpf:str,active_subscription):
+        updateJson = {}
+        updateJson['full_name'] = fullName
+        updateJson['phone_number'] = phoneNumber
+        updateJson['cpf'] = cpf
+        if active_subscription is not None:
+            updateJson['active_subscription'] = active_subscription
+
+        response = self.supabase.table('clients').update(updateJson).eq('auth_user_id', authUserId).execute()
+        return response.data
     
     def signIn(self,email:str, password:str):
         user = self.supabase.auth.sign_in_with_password(
@@ -35,7 +47,8 @@ class SupabaseClient:
         st.rerun()
 
     def sendResetPasswordEmail(self,email:str):
-        self.supabase.auth.reset_password_email(email=email,options={'redirect_to': st.get_option('server.baseUrlPath')})
+        redirect_url = "https://phablo-tavares.github.io/my-auth-redirect/index.html"
+        self.supabase.auth.reset_password_email(email=email,options={'redirect_to': redirect_url})
     
     def resetPassword(self,access_token: str,refresh_token:str,password:str):
         self.supabase.auth.set_session(access_token,refresh_token)
