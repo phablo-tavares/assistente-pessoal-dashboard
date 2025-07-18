@@ -58,16 +58,30 @@ class SupabaseClient:
         except Exception as e:
             print(f"Ocorreu um erro ao buscar os dados do cliente: {e}")
             return []
-    
-    #TODO melhorar essa tratativa de exceções
-    def getSpendings(self, phoneNumber: str, startDate:date, endDate:date) -> list:
+        
+
+    def getUsersBySharingKey(self, sharingKey: str) -> list:
         try:
             response = (
-                self.supabase.table("spending")
+                self.supabase_admin.table("clients")
+                .select("phone_number, full_name")
+                .eq("spendings_sharing_key", sharingKey)
+                .execute()
+            )
+            return response.data
+        except Exception as e:
+            print(f"Ocorreu um erro ao buscar usuários pela chave de compartilhamento: {e}")
+            return []
+    
+    #TODO melhorar essa tratativa de exceções
+    def getSpendings(self, phoneNumbers: list, startDate:date, endDate:date) -> list:
+        try:
+            response = (
+                self.supabase_admin.table("spending")
                 .select(
-                    "spending_value,spending_category,spending_date,spending_description",
+                    "spending_value,spending_category,spending_date,spending_description,client_phone_number",
                 )
-                .eq("client_phone_number", phoneNumber)
+                .in_("client_phone_number", phoneNumbers)
                 .gte("spending_date", startDate.isoformat())
                 .lte("spending_date", endDate.isoformat())
                 .execute()
