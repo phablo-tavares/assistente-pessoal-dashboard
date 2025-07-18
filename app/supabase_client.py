@@ -49,7 +49,7 @@ class SupabaseClient:
             response = (
                 self.supabase.table("clients")
                 .select(
-                    "phone_number,full_name,cpf,active_subscription,email",
+                    "phone_number,full_name,cpf,active_subscription,email,spendings_sharing_key",
                 )
                 .eq("auth_user_id", authUserId)
                 .execute()
@@ -78,13 +78,17 @@ class SupabaseClient:
             return []
 
     # ------------ ADMIN CLIENT FUNCTIONS ----------------
-    def updateClientData(self, authUserId:str, fullName:str, phoneNumber:str, cpf:str,active_subscription):
+    def updateClientData(self, authUserId:str, fullName:str, phoneNumber:str, cpf:str,active_subscription,spendingsSharingKey):
         updateJson = {}
         updateJson['full_name'] = fullName
         updateJson['phone_number'] = phoneNumber
         updateJson['cpf'] = cpf
+        updateJson['spendings_sharing_key'] = spendingsSharingKey
         if active_subscription is not None:
             updateJson['active_subscription'] = active_subscription
+
+        if updateJson['spendings_sharing_key'] == '':
+            updateJson['spendings_sharing_key'] = None
 
         response = self.supabase_admin.table('clients').update(updateJson).eq('auth_user_id', authUserId).execute()
         return response.data

@@ -152,12 +152,16 @@ def isEmailValid(email:str) -> bool:
 def isPasswordValid(password:str) ->bool:
     return len(password) >= 6
 
-def isWhatsappInUse(whatsapp:str):
+def isWhatsappInUseByOtherUser(whatsapp:str):
+    phoneNumberBelongsToCurrentUser = st.session_state.clientData['phone_number'] == whatsapp
+    if phoneNumberBelongsToCurrentUser:
+        return False
+    
     try:
         phoneNumberAlreadyInUse = st.session_state.supabaseClient.phoneNumberAlreadyInUse(phoneNumber=whatsapp)
         return phoneNumberAlreadyInUse
     except Exception as e:
-        return False
+        return True
 
 def isWhatsappValid(whatsapp:str):
     return len(whatsapp) >= 7
@@ -172,7 +176,7 @@ def doSignUp(email:str, password: str, fullName:str, whatsapp:str,cpf:str):
         validPassword = isPasswordValid(password=password)
         validWhatsapp = isWhatsappValid(whatsapp=whatsapp)
         validCPF = isCPFValid(cpf=cpf)
-        whatsappInUse = isWhatsappInUse(whatsapp=whatsapp)
+        whatsappInUse = isWhatsappInUseByOtherUser(whatsapp=whatsapp)
 
         if not validEmail:
             st.toast('Email inválido')
@@ -430,19 +434,30 @@ def formatNumericCpfEditPersoalData():
         cleaned_cpf = re.sub(r'[^0-9]', '', st.session_state.cpf_input_edit_personal_data)
         st.session_state.cpf_input_edit_personal_data = cleaned_cpf
 
-def doUpdatePersonalData(fullName:str,whatsappNumber:str,cpf:str):
+def isSpendingsSharingKeyValid(spendingsSharingKey):
+    if (spendingsSharingKey == None):
+        keyToAnalyse = ""
+    else:
+        keyToAnalyse = spendingsSharingKey
+    emptyKey = keyToAnalyse == "" or keyToAnalyse == None 
+    return (len(keyToAnalyse) >= 8 and " " not in keyToAnalyse) or emptyKey
+
+def doUpdatePersonalData(fullName:str,whatsappNumber:str,cpf:str,spendingsSharingKey:str):
     validWhatsapp = isWhatsappValid(whatsapp=whatsappNumber)
+    whatsappInUseByOtherUser = isWhatsappInUseByOtherUser(whatsapp=whatsappNumber) 
     validCPF = isCPFValid(cpf=cpf)
-    whatsappInUse = isWhatsappInUse(whatsapp=whatsappNumber)
+    validSpendingsSharingKey = isSpendingsSharingKeyValid(spendingsSharingKey=spendingsSharingKey)
 
     if not validWhatsapp:
         st.toast('Número de whatsapp deve ter 7 ou mais números')
-    if whatsappInUse:
+    if whatsappInUseByOtherUser:
         st.toast('Número de whatsapp já cadastrado')
     if not validCPF:
         st.toast('CPF deve conter 11 números')
+    if not validSpendingsSharingKey:
+        st.toast('Chave de compartilhamento deve ter 8 dígitos ou mais e não deve conter espaços')
         
-    if validCPF and validWhatsapp and not whatsappInUse:
+    if validCPF and validWhatsapp and not whatsappInUseByOtherUser and validSpendingsSharingKey:
         try:
             st.session_state.supabaseClient.updateClientData(
                 phoneNumber=whatsappNumber,
@@ -450,6 +465,7 @@ def doUpdatePersonalData(fullName:str,whatsappNumber:str,cpf:str):
                 cpf=cpf,
                 authUserId=st.session_state.currentUser.id,
                 active_subscription=None,
+                spendingsSharingKey=spendingsSharingKey,
             )
             getCurrentClientData()
             st.success("Dados pessoais atualizados com sucesso!")
@@ -478,9 +494,13 @@ def editPersonalDataPage():
         on_change=formatNumericCpfEditPersoalData,
         value=st.session_state.clientData['cpf'],
     )
+    spendingsSharingKey = st.text_input(
+        "Chave de Compartilhamento de Gastos",
+        value=st.session_state.clientData['spendings_sharing_key'],
+    )
     saveButton = st.button("Salvar")
     if saveButton:
-        doUpdatePersonalData(fullName=fullName,whatsappNumber=whatsappNumber,cpf=cpf)
+        doUpdatePersonalData(fullName=fullName,whatsappNumber=whatsappNumber,cpf=cpf,spendingsSharingKey=spendingsSharingKey)
 
 def getAllClientsData():
     clientsData = st.session_state.supabaseClient.getAllClientData()
