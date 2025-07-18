@@ -4,3 +4,4 @@ supabase
 python-dotenv
 streamlit-authenticator
 email_validator
+altair
