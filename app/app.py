@@ -373,7 +373,7 @@ def redefinePasswordScreen():
         if loginButton:
             doRedefinePassword(password=password)
 
-def homePage():
+def userDashboard():
     # Inicializa os widgets com os valores da sessão
     if 'start_date_widget' not in st.session_state:
         st.session_state.start_date_widget = st.session_state.startDate
@@ -686,7 +686,7 @@ elif st.session_state.currentUser:
         if st.session_state.currentUser.email == 'agentepessoalcarpia@gmail.com':
             managementDashboard()
         else:
-            homePage()
+            userDashboard()
     elif pagina_selecionada == "Editar Dados Pessoais":
         editPersonalDataPage()
 else:
