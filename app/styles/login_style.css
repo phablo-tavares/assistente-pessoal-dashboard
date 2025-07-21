@@ -1,0 +1,45 @@
+/* Esconde o menu e o rodapé padrão do Streamlit */
+header, footer {
+    visibility: hidden;
+}
+
+/* Define a cor de fundo laranja para a aplicação */
+.stApp {
+    background: linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%);
+}   
+
+/* Remove o padding superior do container principal */
+.main .block-container {
+    padding-top: 0;
+}
+
+/* Cria o efeito de cartão branco centralizado */
+div[data-testid="stVerticalBlock"] {
+    background-color: white;
+    padding: 2.5rem;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 448px;
+    margin: auto;
+    margin-top: 4rem; /* Distância do topo */
+}
+
+/* Estiliza o botão para ser laranja e ocupar toda a largura */
+.stButton>button {
+    background: linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%);
+    width: 100%;
+    color: white;
+    border-radius: 24px;
+    padding: 0.75rem 0;
+    font-weight: bold;
+}
+
+.stButton>button:hover{
+    color: white;
+    border-color: white;
+}
+
+/* Remove o título H1 padrão gerado pelo Streamlit */
+h1 {
+    display: none;
+}

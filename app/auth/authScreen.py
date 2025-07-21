@@ -10,8 +10,7 @@ def load_css(file_name):
         with open(file_name) as f:
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except FileNotFoundError:
-        st.error(f"Arquivo CSS '{file_name}' não encontrado. Verifique o caminho.")
-
+        pass
 
 # --- Funções de Validação ---
 def isEmailValid(email:str) -> bool:
@@ -149,18 +148,27 @@ def format_numeric_cpf():
 
 # --- Componente Principal da Tela ---
 def authScreen():
-    load_css("app/style.css") 
-    st.title("Agente Pessoal - by Carp.IA")
+    # Carrega o arquivo CSS externo. 
+    # O caminho pode precisar ser ajustado (ex: "app/style.css") dependendo da sua estrutura de pastas.
+    load_css("app/styles/login_style.css")
+    
+    # Conteúdo do cartão
     option = st.radio(label="", options=["Login", "Cadastro", "Esqueci minha senha"], horizontal=True, label_visibility="collapsed")
 
     if option == "Login":
-        email = st.text_input("Email")
-        password = st.text_input("Senha", type="password")
-        loginButton = st.button("Login")
+        st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Bem-vindo de volta</h3>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Entre com suas credenciais para acessar o dashboard</p>", unsafe_allow_html=True)
+
+        email = st.text_input("Email", placeholder="seu@email.com")
+        password = st.text_input("Senha", type="password", placeholder="********")
+        loginButton = st.button("Entrar")
         if loginButton:
             doLogin(email=email,password=password)
 
     elif option == "Cadastro":
+        st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Crie sua Conta</h3>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Preencha os campos para se cadastrar</p>", unsafe_allow_html=True)
+
         email = st.text_input("Email")
         password = st.text_input("Senha", type="password")
         fullName = st.text_input("Nome Completo")
@@ -183,6 +191,8 @@ def authScreen():
             doSignUp(email=email,password=password,fullName=fullName,whatsapp=whatsappNumber,cpf=cpf)
 
     elif option == "Esqueci minha senha":
+        st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Redefinir Senha</h3>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Informe seu e-mail para enviarmos um link de redefinição</p>", unsafe_allow_html=True)
         email = st.text_input("Email")
         sendResetEmailButton = st.button("Enviar email de redefinição")
         if sendResetEmailButton:

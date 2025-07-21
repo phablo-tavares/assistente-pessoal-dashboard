@@ -2,6 +2,18 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 import altair as alt
+import os
+
+def load_css(file_name):
+    """
+    Função para carregar um arquivo CSS externo e aplicá-lo à aplicação.
+    """
+    try:
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
 
 # --- Funções de Lógica de Negócio ---
 
@@ -142,6 +154,11 @@ def getLineChartDataFrame():
 
 # --- Componente Principal da Tela ---
 def homePage():
+    current_dir = os.path.dirname(__file__)     
+    css_path = os.path.join(current_dir, "..", "styles", "home_styles.css")
+    load_css(css_path)
+
+    graph_option = "Gastos por Categoria"
     # Inicializa widgets com valores da sessão para consistência
     if 'start_date_widget' not in st.session_state:
         st.session_state.start_date_widget = st.session_state.startDate
@@ -165,25 +182,46 @@ def homePage():
     if not st.session_state.clientData.get('active_subscription', False):
         st.error("Assinatura inativa! Para começar a usar o sistema, fale com o administrador para ativar sua assinatura.")
         return
-
-    st.markdown("Bem-vindo ao dashboard do seu agente pessoal. Aqui você pode visualizar os gastos registrados pelo WhatsApp.")
     
-    # --- Inputs de Data e Visualização ---
-    dates_input_cols = st.columns([1, 1, 2])
-    with dates_input_cols[0]:
-        st.date_input("Data de Início", key='start_date_widget', value=st.session_state.startDate, on_change=update_dates, max_value=st.session_state.endDate)
-    with dates_input_cols[1]:
-        st.date_input("Data de Fim", key='end_date_widget', value=st.session_state.endDate, on_change=update_dates, min_value=st.session_state.startDate)
-    
-    if st.session_state.clientData.get('spendings_sharing_key'):
-        with dates_input_cols[2]:
-            st.selectbox(
-                'Modo de Visualização',
-                key='visualize_spendings_data_together_widget',
-                options=["Visualizar apenas meus gastos", "Visualizar gastos em conjunto"],
-                on_change=update_view_mode
+    with st.container(border=True):
+        # --- Inputs de Data e Visualização ---
+        st.write('Filtros e Configurações')
+        dates_input_cols = st.columns([1, 1, 1, 1])
+        with dates_input_cols[0]:
+            st.date_input(
+                "Data de Início",
+                key='start_date_widget', 
+                value=st.session_state.startDate, 
+                on_change=update_dates, 
+                max_value=st.session_state.endDate
             )
+        with dates_input_cols[1]:
+            st.date_input(
+                "Data de Fim", 
+                key='end_date_widget', 
+                value=st.session_state.endDate, 
+                on_change=update_dates, 
+                min_value=st.session_state.startDate
+            )
+
+        with dates_input_cols[2]:
+            graph_option = st.selectbox(
+                'Visualização do Gráfico',
+                key='graph_selector_widget',
+                options=["Gastos por Categoria", "Composição dos Gastos","Evolução dos Gastos"],
+            )
+        
+        if st.session_state.clientData.get('spendings_sharing_key'):
+            with dates_input_cols[3]:
+                st.selectbox(
+                    'Modo de Visualização',
+                    key='visualize_spendings_data_together_widget',
+                    options=["Visualizar apenas meus gastos", "Visualizar gastos em conjunto"],
+                    on_change=update_view_mode
+                )
     
+    st.markdown("<br><br>", unsafe_allow_html=True)
+        
     if not st.session_state.clientSpendings:
         link_whatsapp = "https://wa.me/5562992359294"
         texto_com_link = f"""
@@ -195,46 +233,45 @@ def homePage():
             </p>
         </div>
         """
-        st.markdown(texto_com_link, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown(texto_com_link, unsafe_allow_html=True)
     else:
-        barChartTab, pieChartTab, lineChartTab = st.tabs(["Gastos por Categoria", "Composição dos Gastos", "Evolução dos Gastos"])
+        with st.container(border=True):
+            if graph_option == "Gastos por Categoria":
+                df_bar = getDataFrameBarChart()
+                if st.session_state.view_mode == 'personal':
+                    df_personal = df_bar.groupby(['Categoria', 'colors'], as_index=False)['Valor Gasto (R$)'].sum()
+                    barChart = alt.Chart(df_personal).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
+                        x=alt.X('Categoria:N', title='Categoria', sort=None),
+                        y=alt.Y('Valor Gasto (R$):Q', title='Valor Gasto (R$)', scale=alt.Scale(zero=True)),
+                        color=alt.Color('Categoria:N', scale=alt.Scale(domain=df_personal['Categoria'].tolist(), range=df_personal['colors'].tolist()), legend=None),
+                        tooltip=['Categoria', 'Valor Gasto (R$)']
+                    )
+                else: # MODO 'JOINT'
+                    barChart = alt.Chart(df_bar).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
+                        x=alt.X('Categoria:N', title='Categoria', sort=None),
+                        y=alt.Y('Valor Gasto (R$):Q', title='Valor Gasto (R$)', scale=alt.Scale(zero=True)),
+                        color=alt.Color('Membro:N', title='Membro'),
+                        tooltip=['Categoria', 'Membro', 'Valor Gasto (R$)']
+                    )
+                    
+                st.altair_chart(barChart.configure_axis(grid=False).configure_view(strokeWidth=0).properties(height=500), use_container_width=True)
 
-        with barChartTab:
-            df_bar = getDataFrameBarChart()
-            
-            if st.session_state.view_mode == 'personal':
-                df_personal = df_bar.groupby(['Categoria', 'colors'], as_index=False)['Valor Gasto (R$)'].sum()
-                barChart = alt.Chart(df_personal).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
-                    x=alt.X('Categoria:N', title='Categoria', sort=None),
-                    y=alt.Y('Valor Gasto (R$):Q', title='Valor Gasto (R$)', scale=alt.Scale(zero=True)),
-                    color=alt.Color('Categoria:N', scale=alt.Scale(domain=df_personal['Categoria'].tolist(), range=df_personal['colors'].tolist()), legend=None),
+            elif graph_option == "Composição dos Gastos":
+                df_pie = getDataFramePieChart()
+                pie_chart = alt.Chart(df_pie).mark_arc(innerRadius=90, cornerRadius=5).encode(
+                    theta=alt.Theta("Valor Gasto (R$):Q"),
+                    color=alt.Color('Categoria:N', scale=alt.Scale(domain=df_pie['Categoria'].tolist(), range=df_pie['colors'].tolist()), legend=alt.Legend(title="Categorias", orient="right")),
                     tooltip=['Categoria', 'Valor Gasto (R$)']
-                )
-            else: # MODO 'JOINT'
-                barChart = alt.Chart(df_bar).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
-                    x=alt.X('Categoria:N', title='Categoria', sort=None),
-                    y=alt.Y('Valor Gasto (R$):Q', title='Valor Gasto (R$)', scale=alt.Scale(zero=True)),
-                    color=alt.Color('Membro:N', title='Membro'),
-                    tooltip=['Categoria', 'Membro', 'Valor Gasto (R$)']
-                )
-                
-            st.altair_chart(barChart.configure_axis(grid=False).configure_view(strokeWidth=0).properties(height=500), use_container_width=True)
+                ).configure_view(strokeWidth=0).properties(height=500)
+                st.altair_chart(pie_chart, use_container_width=True)
 
-        with pieChartTab:
-            df_pie = getDataFramePieChart()
-            pie_chart = alt.Chart(df_pie).mark_arc(innerRadius=90, cornerRadius=5).encode(
-                theta=alt.Theta("Valor Gasto (R$):Q"),
-                color=alt.Color('Categoria:N', scale=alt.Scale(domain=df_pie['Categoria'].tolist(), range=df_pie['colors'].tolist()), legend=alt.Legend(title="Categorias", orient="right")),
-                tooltip=['Categoria', 'Valor Gasto (R$)']
-            ).configure_view(strokeWidth=0).properties(height=500)
-            st.altair_chart(pie_chart, use_container_width=True)
-
-        with lineChartTab:
-            df_line = getLineChartDataFrame()
-            lineChart = alt.Chart(df_line).mark_line().encode(
-                x=alt.X('Data:T', title='Data'),
-                y=alt.Y('Total Acumulado (R$):Q', title='Total Acumulado (R$)', scale=alt.Scale(zero=True)),
-                color=alt.Color('Categoria:N', title='Categoria'),
-                tooltip=['Data', 'Categoria', 'Total Acumulado (R$)']
-            ).properties(height=500).configure_axis(grid=False).configure_view(strokeWidth=0).interactive()
-            st.altair_chart(lineChart, use_container_width=True)
+            elif graph_option == "Evolução dos Gastos":
+                df_line = getLineChartDataFrame()
+                lineChart = alt.Chart(df_line).mark_line().encode(
+                    x=alt.X('Data:T', title='Data'),
+                    y=alt.Y('Total Acumulado (R$):Q', title='Total Acumulado (R$)', scale=alt.Scale(zero=True)),
+                    color=alt.Color('Categoria:N', title='Categoria'),
+                    tooltip=['Data', 'Categoria', 'Total Acumulado (R$)']
+                ).properties(height=500).configure_axis(grid=False).configure_view(strokeWidth=0).interactive()
+                st.altair_chart(lineChart, use_container_width=True)

@@ -14,7 +14,7 @@ st.set_page_config(
     layout="wide",
     page_title=constants.APP_TITLE,
     page_icon=None,
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
 # --- Gerenciamento de Estado Global ---
