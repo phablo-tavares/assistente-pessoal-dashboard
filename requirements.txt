@@ -2,6 +2,6 @@ streamlit
 pandas
 supabase
 python-dotenv
-streamlit-authenticator
 email_validator
 altair
+streamlit-option-menu

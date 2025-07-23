@@ -5,10 +5,24 @@ from supabase_client import SupabaseClient
 # Import das telas
 from auth.authScreen import authScreen
 from auth.redefinePasswordScreen import redefinePasswordScreen
-from home.userDashboard import homePage
+from home.userDashboard import userDashboard
 from home.editPersonalDataPage import editPersonalDataPage
 from home.managementDashboard import managementDashboard
 import constants
+import os
+from streamlit_option_menu import option_menu
+
+def load_css(filaPath):
+    """
+    Função para carregar um arquivo CSS externo e aplicá-lo à aplicação.
+    """
+    try:
+        with open(filaPath) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+current_dir = os.path.dirname(__file__)
 
 st.set_page_config(
     layout="wide",
@@ -64,28 +78,42 @@ def main():
     if st.session_state.redefine_password_flux:
         redefinePasswordScreen()
     elif st.session_state.currentUser:
-        with st.sidebar:
-            pagina_selecionada = st.radio(
-                "",
-                ("Dashboard", "Editar Dados Pessoais")
+
+        if st.sidebar.button("Sair"):
+            st.session_state.supabaseClient.signOut()
+            keys_to_keep = [] 
+            for key in st.session_state.keys():
+                if key not in keys_to_keep:
+                    del st.session_state[key]
+            st.rerun()
+        with st.container(key='main-container'):
+            optionMenu = option_menu(
+                menu_title=None,
+                options=[
+                    "Visão Geral",
+                    "Perfil",
+                ],
+                icons=[
+                    "bar-chart-line",
+                    "person",
+                ],
+                default_index=0,
+                orientation='horizontal',
+                styles={
+                    "container": {"padding": "10!important", "background":"white","border-radius": "22px",},
+                    "icon": {"font-size": "18px"}, 
+                    "nav-link": {"border-radius": "12px", "font-size": "18px", "text-align": "center", "margin":"0px", "--hover-color": "white","padding": "15px"},
+                    "nav-link-selected": {"background": "linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%)"},
+                }
             )
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.sidebar.button("Sair"):
-                # Limpa tudo ao sair para garantir um estado limpo no próximo login
-                keys_to_keep = [] 
-                for key in st.session_state.keys():
-                    if key not in keys_to_keep:
-                        del st.session_state[key]
-                st.rerun()
-                
-        if pagina_selecionada == "Dashboard":
-            # Rota especial para o admin
-            if st.session_state.currentUser.email == 'agentepessoalcarpia@gmail.com':
-                managementDashboard()
-            else:
-                homePage()
-        elif pagina_selecionada == "Editar Dados Pessoais":
-            editPersonalDataPage()
+            if optionMenu == "Visão Geral":
+                if st.session_state.currentUser.email == 'agentepessoalcarpia@gmail.com':
+                    managementDashboard()
+                else:
+                    userDashboard()
+            elif optionMenu == "Perfil":
+                editPersonalDataPage()
+
     else:
         authScreen()
 

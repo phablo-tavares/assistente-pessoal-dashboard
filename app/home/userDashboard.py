@@ -4,18 +4,65 @@ from datetime import date
 import altair as alt
 import os
 
-def load_css(file_name):
+def load_css(filaPath):
     """
     Função para carregar um arquivo CSS externo e aplicá-lo à aplicação.
     """
     try:
-        with open(file_name) as f:
+        with open(filaPath) as f:
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except FileNotFoundError:
         pass
 
+current_dir = os.path.dirname(__file__)
+
+def getHtmlString(htmlFileName:str):
+    htmlFolderPath = os.path.join(current_dir, "..", "static/html")
+    with open(f"{htmlFolderPath}/{htmlFileName}", 'r', encoding='utf-8') as f:
+        htmlContent = f.read()
+        return htmlContent
 
 # --- Funções de Lógica de Negócio ---
+
+def calcular_metricas_principais(gastos):
+    if not gastos:
+        return {
+            'total_gastos': 0,
+            'maior_gasto_valor': 0,
+            'maior_gasto_categoria': 'N/A',
+            'categoria_principal_nome': 'N/A',
+        }
+
+    # Usa o Pandas para facilitar a manipulação dos dados
+    df = pd.DataFrame(gastos)
+    df['spending_value'] = pd.to_numeric(df['spending_value'])
+
+    # 1. Calcular o Total de Gastos
+    total_gastos = df['spending_value'].sum()
+
+    # 2. Encontrar o Maior Gasto (a maior transação individual)
+    # .loc encontra a linha inteira com o maior valor
+    maior_gasto_registro = df.loc[df['spending_value'].idxmax()]
+    maior_gasto_valor = maior_gasto_registro['spending_value']
+    maior_gasto_categoria = maior_gasto_registro['spending_category']
+
+    # 3. Encontrar a Categoria Principal (categoria com a maior soma de gastos)
+    gastos_por_categoria = df.groupby('spending_category')['spending_value'].sum()
+    categoria_principal_nome = gastos_por_categoria.idxmax()
+
+    categoria_principal_valor = gastos_por_categoria.max()
+    if total_gastos > 0:
+        categoria_principal_percentual = (categoria_principal_valor / total_gastos) * 100
+    else:
+        categoria_principal_percentual = 0
+
+    return {
+        'total_gastos': total_gastos,
+        'maior_gasto_valor': maior_gasto_valor,
+        'maior_gasto_categoria': maior_gasto_categoria,
+        'categoria_principal_nome': categoria_principal_nome,
+        'categoria_principal_percentual': categoria_principal_percentual,
+    }
 
 def getCurrentClientData():
     if st.session_state.currentUser:
@@ -153,9 +200,8 @@ def getLineChartDataFrame():
     return finalDf
 
 # --- Componente Principal da Tela ---
-def homePage():
-    current_dir = os.path.dirname(__file__)     
-    css_path = os.path.join(current_dir, "..", "styles", "home_styles.css")
+def userDashboard():
+    css_path = os.path.join(current_dir, "..", "styles", "dashboard_styles.css")
     load_css(css_path)
 
     graph_option = "Gastos por Categoria"
@@ -171,9 +217,6 @@ def homePage():
             fetch_spending_data()
             st.session_state.spendingDataFetched = True
             st.rerun()
-
-    st.title('Dashboard Agente Pessoal - by Carp.IA')
-    st.write('')
     
     if not st.session_state.clientData:
         st.error("Não foi possível carregar seus dados. Tente sair e entrar novamente.")
@@ -182,16 +225,44 @@ def homePage():
     if not st.session_state.clientData.get('active_subscription', False):
         st.error("Assinatura inativa! Para começar a usar o sistema, fale com o administrador para ativar sua assinatura.")
         return
+
     
-    with st.container(border=True):
+    # CHAME A FUNÇÃO AQUI!
+    metricas = calcular_metricas_principais(st.session_state.clientSpendings)
+    total_gastos = metricas['total_gastos']
+    maior_gasto = metricas['maior_gasto_valor']
+    categoria_do_maior_gasto = metricas['maior_gasto_categoria']
+    categoria_principal_nome = metricas['categoria_principal_nome']
+    categoria_principal_percentual = metricas['categoria_principal_percentual']
+    
+    totalSpendings,biggestSpending,mainCategorySpending = st.columns(3)
+    with totalSpendings:
+        with st.container(key="totalSpendings"):
+            st.write("Total de Gastos")
+            st.header(f"R$ {total_gastos:,.2f}")
+            st.write("No período")
+
+    with biggestSpending:
+        with st.container(key="biggestSpending"):
+            st.write("Maior Gasto")
+            st.header(f"R$ {maior_gasto:,.2f}")
+            st.write(categoria_do_maior_gasto)
+
+    with mainCategorySpending:
+        with st.container(key="mainCategorySpending"):
+            st.write("Categoria Principal")
+            st.header(categoria_principal_nome)
+            st.write(f'{categoria_principal_percentual:.0f}% do total')
+    st.markdown('<br>',unsafe_allow_html=True)
+
+    with st.container(key='filters'):
         # --- Inputs de Data e Visualização ---
-        st.write('Filtros e Configurações')
+        st.markdown(getHtmlString("filtersAndConfigsElement.html"),unsafe_allow_html=True)
         dates_input_cols = st.columns([1, 1, 1, 1])
         with dates_input_cols[0]:
             st.date_input(
                 "Data de Início",
                 key='start_date_widget', 
-                value=st.session_state.startDate, 
                 on_change=update_dates, 
                 max_value=st.session_state.endDate
             )
@@ -199,7 +270,6 @@ def homePage():
             st.date_input(
                 "Data de Fim", 
                 key='end_date_widget', 
-                value=st.session_state.endDate, 
                 on_change=update_dates, 
                 min_value=st.session_state.startDate
             )
@@ -220,7 +290,7 @@ def homePage():
                     on_change=update_view_mode
                 )
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
         
     if not st.session_state.clientSpendings:
         link_whatsapp = "https://wa.me/5562992359294"
@@ -233,11 +303,32 @@ def homePage():
             </p>
         </div>
         """
-        with st.container(border=True):
+        with st.container():
             st.markdown(texto_com_link, unsafe_allow_html=True)
-    else:
-        with st.container(border=True):
+    else:   
+        with st.container(key="spendings-graphs"):
+            graphDescriptionHtml = f'''
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="
+                            width: 12px;
+                            height: 12px;
+                            background: linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%);
+                            border-radius: 50%;
+                        ">
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <h3 style="font-size: 18px;">
+                                {graph_option}
+                            </h3>
+                        </div>
+                    </div>
+                    <p>Análise detalhada dos seus gastos no período selecionado</p>
+                </div>
+                <br>
+            '''
             if graph_option == "Gastos por Categoria":
+                st.markdown(graphDescriptionHtml, unsafe_allow_html=True)
                 df_bar = getDataFrameBarChart()
                 if st.session_state.view_mode == 'personal':
                     df_personal = df_bar.groupby(['Categoria', 'colors'], as_index=False)['Valor Gasto (R$)'].sum()
@@ -255,23 +346,25 @@ def homePage():
                         tooltip=['Categoria', 'Membro', 'Valor Gasto (R$)']
                     )
                     
-                st.altair_chart(barChart.configure_axis(grid=False).configure_view(strokeWidth=0).properties(height=500), use_container_width=True)
+                st.altair_chart(barChart.configure_axis(grid=False).configure(background='white').configure_view(strokeWidth=0).properties(height=500), use_container_width=True)
 
             elif graph_option == "Composição dos Gastos":
+                st.markdown(graphDescriptionHtml, unsafe_allow_html=True)
                 df_pie = getDataFramePieChart()
                 pie_chart = alt.Chart(df_pie).mark_arc(innerRadius=90, cornerRadius=5).encode(
                     theta=alt.Theta("Valor Gasto (R$):Q"),
                     color=alt.Color('Categoria:N', scale=alt.Scale(domain=df_pie['Categoria'].tolist(), range=df_pie['colors'].tolist()), legend=alt.Legend(title="Categorias", orient="right")),
                     tooltip=['Categoria', 'Valor Gasto (R$)']
-                ).configure_view(strokeWidth=0).properties(height=500)
+                ).configure_view(strokeWidth=0).configure(background='white').properties(height=500)
                 st.altair_chart(pie_chart, use_container_width=True)
 
             elif graph_option == "Evolução dos Gastos":
+                st.markdown(graphDescriptionHtml, unsafe_allow_html=True)
                 df_line = getLineChartDataFrame()
                 lineChart = alt.Chart(df_line).mark_line().encode(
                     x=alt.X('Data:T', title='Data'),
                     y=alt.Y('Total Acumulado (R$):Q', title='Total Acumulado (R$)', scale=alt.Scale(zero=True)),
                     color=alt.Color('Categoria:N', title='Categoria'),
                     tooltip=['Data', 'Categoria', 'Total Acumulado (R$)']
-                ).properties(height=500).configure_axis(grid=False).configure_view(strokeWidth=0).interactive()
+                ).properties(height=500).configure_axis(grid=False).configure(background='white').configure_view(strokeWidth=0).interactive()
                 st.altair_chart(lineChart, use_container_width=True)

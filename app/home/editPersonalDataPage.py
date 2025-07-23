@@ -1,6 +1,19 @@
 import streamlit as st
 import re
 from home.userDashboard import getCurrentClientData # Reutiliza a função de busca
+import os
+
+def load_css(filaPath):
+    """
+    Função para carregar um arquivo CSS externo e aplicá-lo à aplicação.
+    """
+    try:
+        with open(filaPath) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+current_dir = os.path.dirname(__file__)
 
 # --- Funções de Validação e Formatação ---
 def formatNumericWhatsappEditPersonalData():
@@ -63,6 +76,8 @@ def doUpdatePersonalData(fullName:str, whatsappNumber:str, cpf:str, spendingsSha
 
 # --- Componente Principal da Tela ---
 def editPersonalDataPage():
+    css_path = os.path.join(current_dir, "..", "styles", "profile_styles.css")
+    load_css(css_path)
     st.title("Editar Dados Pessoais")
 
     # Garante que os dados do cliente estejam carregados

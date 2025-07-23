@@ -1,6 +1,7 @@
 [theme]
 base="light"
 primaryColor="#FF661A"
+backgroundColor="#F8F8F8"
 
 [server]
 headless = true
