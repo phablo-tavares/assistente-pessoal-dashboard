@@ -1,0 +1,11 @@
+.stMainMenu {
+    display: none;
+}
+
+footer {
+    display: none;
+}
+
+span[data-testid="stHeaderActionElements"]{
+    display: none;
+}

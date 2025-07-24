@@ -1,14 +1,15 @@
 .stMainMenu {
-    visibility: hidden;
+    display: none;
 }
 
 footer {
-    visibility: hidden;
+    display: none;
 }
 
-[data-testid="stHeaderActionElements"]{
-    visibility: hidden;
+span[data-testid="stHeaderActionElements"]{
+    display: none;
 }
+
 
 [data-testid="stHeader"] {
     background: linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%);
@@ -17,6 +18,13 @@ footer {
 [data-testid="stAltairChart"] {
     background-color: transparent;
 }
+
+
+.st-key-main-container{
+    max-width: 85%;
+    justify-self: center;
+}
+
 
 .st-key-filters {
     background-color: white;
@@ -33,7 +41,6 @@ footer {
     border: 0; 
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
 }
-
 
 
 
@@ -68,3 +75,48 @@ footer {
 .st-key-totalSpendings h2,.st-key-biggestSpending h2,.st-key-mainCategorySpending h2{
     padding-top: 0;
 }
+
+
+#app-logo-header{
+    position:fixed;
+    background-color: white;
+    border-radius: 8px; 
+    top: 7px;
+    left: 100px;
+    z-index: 9999999; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 5px;
+}
+#app-logo-header h3{
+    padding: 0;
+    margin: 0;
+    text-align: center; 
+    color: black; 
+    font-size:12px;
+    font-family: system-ui;
+}
+
+
+
+
+/* Estiliza o botão para ser laranja e ocupar toda a largura */
+.stButton>button {
+    background: linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%);
+    width: 100%;
+    color: white;
+    border-radius: 24px;
+    padding: 0.75rem 0;
+    font-weight: bold;
+}
+
+.stButton>button:hover{
+    color: white;
+    border-color: white;
+}
+.stButton>button:active{
+    color: #F8F8F8;
+    border-color: #F8F8F8;
+}
+

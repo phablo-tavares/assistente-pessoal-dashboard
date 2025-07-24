@@ -1,5 +1,17 @@
 import streamlit as st
+import os   
 
+def load_css(filaPath):
+    """
+    Função para carregar um arquivo CSS externo e aplicá-lo à aplicação.
+    """
+    try:
+        with open(filaPath) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+current_dir = os.path.dirname(__file__)
 # --- Funções de Lógica de Negócio ---
 
 def getAllClientsData():
@@ -35,11 +47,9 @@ def toggleSubscriptionStatus(clientId:int, newStatus:bool, clientName:str):
 
 # --- Componente Principal da Tela ---
 def managementDashboard():
+    css_path = os.path.join(current_dir, "..", "styles", "management_dashboard.css")
+    load_css(css_path)
     st.title("Gerenciamento de Usuários")
-    
-    # Botão para recarregar os dados
-    if st.button("Recarregar Lista de Clientes"):
-        getAllClientsData()
     
     if "allClientsData" not in st.session_state or not st.session_state.allClientsData:
         getAllClientsData()
@@ -49,7 +59,7 @@ def managementDashboard():
     header_cols[0].markdown("**Nome**")
     header_cols[1].markdown("**CPF**")
     header_cols[2].markdown("**Telefone**")
-    header_cols[3].markdown("**Ativa**")
+    header_cols[3].markdown("**Status Assinatura**")
     st.divider()
 
     if not st.session_state.allClientsData:

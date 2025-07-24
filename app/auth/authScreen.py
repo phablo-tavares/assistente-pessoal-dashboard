@@ -153,8 +153,12 @@ def authScreen():
     load_css("app/styles/login_style.css")
     
     # Conteúdo do cartão
+
+
     option = st.radio(label="", options=["Login", "Cadastro", "Esqueci minha senha"], horizontal=True, label_visibility="collapsed")
 
+    st.markdown("<h3 style='text-align: center; color: black; font-size:16px; padding-top:24px ; font-family: system-ui;'>Agente Pessoal</h3>", unsafe_allow_html=True)
+    
     if option == "Login":
         st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Bem-vindo de volta</h3>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Entre com suas credenciais para acessar o dashboard</p>", unsafe_allow_html=True)

@@ -12,22 +12,13 @@ import constants
 import os
 from streamlit_option_menu import option_menu
 
-def load_css(filaPath):
-    """
-    Função para carregar um arquivo CSS externo e aplicá-lo à aplicação.
-    """
-    try:
-        with open(filaPath) as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
 
-current_dir = os.path.dirname(__file__)
+#TODO PROBLEMA A INVESTIGAR - tá buscando os gastos errados - possivelmente trazendo sempre todos os gastos 
 
 st.set_page_config(
     layout="wide",
     page_title=constants.APP_TITLE,
-    page_icon=None,
+    page_icon=":material/bar_chart:",
     initial_sidebar_state="collapsed",
 )
 
@@ -78,41 +69,38 @@ def main():
     if st.session_state.redefine_password_flux:
         redefinePasswordScreen()
     elif st.session_state.currentUser:
-
         if st.sidebar.button("Sair"):
             st.session_state.supabaseClient.signOut()
-            keys_to_keep = [] 
-            for key in st.session_state.keys():
-                if key not in keys_to_keep:
-                    del st.session_state[key]
+            st.session_state.clear()
             st.rerun()
         with st.container(key='main-container'):
-            optionMenu = option_menu(
-                menu_title=None,
-                options=[
-                    "Visão Geral",
-                    "Perfil",
-                ],
-                icons=[
-                    "bar-chart-line",
-                    "person",
-                ],
-                default_index=0,
-                orientation='horizontal',
-                styles={
-                    "container": {"padding": "10!important", "background":"white","border-radius": "22px",},
-                    "icon": {"font-size": "18px"}, 
-                    "nav-link": {"border-radius": "12px", "font-size": "18px", "text-align": "center", "margin":"0px", "--hover-color": "white","padding": "15px"},
-                    "nav-link-selected": {"background": "linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%)"},
-                }
-            )
-            if optionMenu == "Visão Geral":
-                if st.session_state.currentUser.email == 'agentepessoalcarpia@gmail.com':
-                    managementDashboard()
-                else:
+            if st.session_state.currentUser.email == 'agentepessoalcarpia@gmail.com':
+                managementDashboard()
+            else:
+                st.markdown("<div id='app-logo-header'><h3>Agente Pessoal</h3><div>", unsafe_allow_html=True)
+                optionMenu = option_menu(
+                    menu_title=None,
+                    options=[
+                        "Visão Geral",
+                        "Perfil",
+                    ],
+                    icons=[
+                        "bar-chart-line",
+                        "person",
+                    ],
+                    default_index=0,
+                    orientation='horizontal',
+                    styles={
+                        "container": {"padding": "10!important", "background":"white","border-radius": "22px",},
+                        "icon": {"font-size": "18px"}, 
+                        "nav-link": {"border-radius": "12px", "font-size": "18px", "text-align": "center", "margin":"0px", "--hover-color": "white","padding": "15px"},
+                        "nav-link-selected": {"background": "linear-gradient(135deg, hsl(20 100% 55%) 0%, hsl(25 100% 60%) 100%)"},
+                    }
+                )
+                if optionMenu == "Visão Geral":
                     userDashboard()
-            elif optionMenu == "Perfil":
-                editPersonalDataPage()
+                elif optionMenu == "Perfil":
+                    editPersonalDataPage()
 
     else:
         authScreen()

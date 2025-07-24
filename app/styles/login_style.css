@@ -38,8 +38,17 @@ div[data-testid="stVerticalBlock"] {
     color: white;
     border-color: white;
 }
+.stButton>button:active{
+    color: #F8F8F8;
+    border-color: #F8F8F8;
+}
 
 /* Remove o título H1 padrão gerado pelo Streamlit */
 h1 {
+    display: none;
+}
+
+
+span[data-testid="stHeaderActionElements"]{
     display: none;
 }

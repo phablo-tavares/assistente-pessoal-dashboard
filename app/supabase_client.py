@@ -34,7 +34,6 @@ class SupabaseClient:
     def signOut(self):
         self.supabase.auth.sign_out()
         st.session_state.currentUser = None
-        st.rerun()
 
     def sendResetPasswordEmail(self,email:str):
         redirect_url = "https://phablo-tavares.github.io/my-auth-redirect/index.html"
