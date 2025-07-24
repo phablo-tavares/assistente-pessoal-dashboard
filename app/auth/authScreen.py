@@ -148,54 +148,53 @@ def format_numeric_cpf():
 
 # --- Componente Principal da Tela ---
 def authScreen():
-    # Carrega o arquivo CSS externo. 
-    # O caminho pode precisar ser ajustado (ex: "app/style.css") dependendo da sua estrutura de pastas.
     load_css("app/styles/login_style.css")
     
     # Conteúdo do cartão
-    option = st.radio(label="", options=["Login", "Cadastro", "Esqueci minha senha"], horizontal=True, label_visibility="collapsed")
+    with st.container(key='auth-component-container'):
+        option = st.radio(label="", options=["Login", "Cadastro", "Esqueci minha senha"], horizontal=True, label_visibility="collapsed")
 
-    st.markdown("<h3 style='text-align: center; color: black; font-size:16px; padding-top:24px ; font-family: system-ui;'>Agente Pessoal</h3>", unsafe_allow_html=True)
-    
-    if option == "Login":
-        st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Bem-vindo de volta</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Entre com suas credenciais para acessar o dashboard</p>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: black; font-size:16px; padding-top:24px ; font-family: system-ui;'>Agente Pessoal</h3>", unsafe_allow_html=True)
+        
+        if option == "Login":
+            st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Bem-vindo de volta</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Entre com suas credenciais para acessar o dashboard</p>", unsafe_allow_html=True)
 
-        email = st.text_input("Email", placeholder="seu@email.com")
-        password = st.text_input("Senha", type="password", placeholder="********")
-        loginButton = st.button("Entrar")
-        if loginButton:
-            doLogin(email=email,password=password)
+            email = st.text_input("Email", placeholder="seu@email.com")
+            password = st.text_input("Senha", type="password", placeholder="********")
+            loginButton = st.button("Entrar")
+            if loginButton:
+                doLogin(email=email,password=password)
 
-    elif option == "Cadastro":
-        st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Crie sua Conta</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Preencha os campos para se cadastrar</p>", unsafe_allow_html=True)
+        elif option == "Cadastro":
+            st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Crie sua Conta</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Preencha os campos para se cadastrar</p>", unsafe_allow_html=True)
 
-        email = st.text_input("Email")
-        password = st.text_input("Senha", type="password")
-        fullName = st.text_input("Nome Completo")
-        whatsappNumber = st.text_input(
-            "Número Whatsapp (apenas números)",
-            key="whatsapp_number_input",
-            placeholder="5562987532165",
-            max_chars=18,
-            on_change=format_numeric_whatsapp,
-        )
-        cpf = st.text_input(
-            "CPF (apenas números)",
-            key="cpf_input",
-            placeholder="11122233344",
-            max_chars=11,
-            on_change=format_numeric_cpf,
-        )
-        signUpButton = st.button("Cadastrar")
-        if signUpButton:
-            doSignUp(email=email,password=password,fullName=fullName,whatsapp=whatsappNumber,cpf=cpf)
+            email = st.text_input("Email")
+            password = st.text_input("Senha", type="password")
+            fullName = st.text_input("Nome Completo")
+            whatsappNumber = st.text_input(
+                "Número Whatsapp (apenas números)",
+                key="whatsapp_number_input",
+                placeholder="5562987532165",
+                max_chars=18,
+                on_change=format_numeric_whatsapp,
+            )
+            cpf = st.text_input(
+                "CPF (apenas números)",
+                key="cpf_input",
+                placeholder="11122233344",
+                max_chars=11,
+                on_change=format_numeric_cpf,
+            )
+            signUpButton = st.button("Cadastrar")
+            if signUpButton:
+                doSignUp(email=email,password=password,fullName=fullName,whatsapp=whatsappNumber,cpf=cpf)
 
-    elif option == "Esqueci minha senha":
-        st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Redefinir Senha</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Informe seu e-mail para enviarmos um link de redefinição</p>", unsafe_allow_html=True)
-        email = st.text_input("Email")
-        sendResetEmailButton = st.button("Enviar email de redefinição")
-        if sendResetEmailButton:
-            doSendResetPasswordEmail(email=email)
+        elif option == "Esqueci minha senha":
+            st.markdown("<h3 style='text-align: center; color: black; margin-top: -10px;'>Redefinir Senha</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>Informe seu e-mail para enviarmos um link de redefinição</p>", unsafe_allow_html=True)
+            email = st.text_input("Email")
+            sendResetEmailButton = st.button("Enviar email de redefinição")
+            if sendResetEmailButton:
+                doSendResetPasswordEmail(email=email)

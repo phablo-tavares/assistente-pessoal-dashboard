@@ -14,7 +14,7 @@ header, footer {
 }
 
 /* Cria o efeito de cartão branco centralizado */
-div[data-testid="stVerticalBlock"] {
+.st-key-auth-component-container {
     background-color: white;
     padding: 2.5rem;
     border-radius: 24px;

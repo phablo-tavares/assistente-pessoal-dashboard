@@ -73,39 +73,39 @@ def getCurrentClientData():
 
 # FUNÇÃO CENTRAL: Orquestra a busca de dados com base no modo de visualização
 def fetch_spending_data():
-    with st.spinner("Buscando dados..."):
-        phone_numbers_to_fetch = []
-        st.session_state.user_map = {} # Limpa o mapa de usuários
+   
+    phone_numbers_to_fetch = []
+    st.session_state.user_map = {} # Limpa o mapa de usuários
 
-        if not st.session_state.clientData:
-            getCurrentClientData()
-        
-        if not st.session_state.clientData:
-            st.warning("Não foi possível carregar os dados do cliente.")
-            st.session_state.clientSpendings = []
-            return
+    if not st.session_state.clientData:
+        getCurrentClientData()
+    
+    if not st.session_state.clientData:
+        st.warning("Não foi possível carregar os dados do cliente.")
+        st.session_state.clientSpendings = []
+        return
 
-        # Decide quais números de telefone usar
-        if st.session_state.view_mode == "joint" and st.session_state.clientData.get('spendings_sharing_key'):
-            sharing_key = st.session_state.clientData['spendings_sharing_key']
-            users_in_group = st.session_state.supabaseClient.getUsersBySharingKey(sharing_key)
-            if users_in_group:
-                phone_numbers_to_fetch = [user['phone_number'] for user in users_in_group]
-                # Cria o mapa de telefone para nome para usar nos gráficos
-                st.session_state.user_map = {user['phone_number']: user['full_name'] for user in users_in_group}
-        else: # Modo pessoal ou sem chave
-            phone_numbers_to_fetch = [st.session_state.clientData['phone_number']]
-            st.session_state.user_map = {st.session_state.clientData['phone_number']: st.session_state.clientData.get('full_name', 'Eu')}
+    # Decide quais números de telefone usar
+    if st.session_state.view_mode == "joint" and st.session_state.clientData.get('spendings_sharing_key'):
+        sharing_key = st.session_state.clientData['spendings_sharing_key']
+        users_in_group = st.session_state.supabaseClient.getUsersBySharingKey(sharing_key)
+        if users_in_group:
+            phone_numbers_to_fetch = [user['phone_number'] for user in users_in_group]
+            # Cria o mapa de telefone para nome para usar nos gráficos
+            st.session_state.user_map = {user['phone_number']: user['full_name'] for user in users_in_group}
+    else: # Modo pessoal ou sem chave
+        phone_numbers_to_fetch = [st.session_state.clientData['phone_number']]
+        st.session_state.user_map = {st.session_state.clientData['phone_number']: st.session_state.clientData.get('full_name', 'Eu')}
 
-        if phone_numbers_to_fetch:
-            clientSpendings = st.session_state.supabaseClient.getSpendings(
-                phoneNumbers=phone_numbers_to_fetch,
-                startDate=st.session_state.startDate,
-                endDate=st.session_state.endDate,
-            )
-            st.session_state.clientSpendings = clientSpendings
-        else:
-            st.session_state.clientSpendings = []
+    if phone_numbers_to_fetch:
+        clientSpendings = st.session_state.supabaseClient.getSpendings(
+            phoneNumbers=phone_numbers_to_fetch,
+            startDate=st.session_state.startDate,
+            endDate=st.session_state.endDate,
+        )
+        st.session_state.clientSpendings = clientSpendings
+    else:
+        st.session_state.clientSpendings = []
 
 # --- Funções de Callback ---
 
@@ -212,10 +212,11 @@ def userDashboard():
         st.session_state.end_date_widget = st.session_state.endDate
 
     if not st.session_state.spendingDataFetched:
-        getCurrentClientData()
-        fetch_spending_data()
-        st.session_state.spendingDataFetched = True
-        st.rerun()
+        with st.spinner("Buscando dados..."):
+            getCurrentClientData()
+            fetch_spending_data()
+            st.session_state.spendingDataFetched = True
+            st.rerun()
     
     if not st.session_state.clientData:
         st.error("Não foi possível carregar seus dados. Tente sair e entrar novamente.")

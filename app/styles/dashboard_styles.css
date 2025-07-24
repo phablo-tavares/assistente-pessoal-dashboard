@@ -128,3 +128,31 @@ span[data-testid="stHeaderActionElements"]{
 .container_gzau3_1 ,._profileContainer_gzau_53{
     display: none;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.st-key-auth-component-container {
+    background-color: white;
+    padding: 2.5rem;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 448px;
+    margin: auto;
+    margin-top: 4rem; 
+}
