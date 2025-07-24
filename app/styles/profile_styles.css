@@ -30,6 +30,7 @@ span[data-testid="stHeaderActionElements"]{
 .st-key-profile-container{
     max-width: 672px;
     justify-self: center;
+    align-self: center;
 }
 
 .st-key-edit-personal-data-fields{
