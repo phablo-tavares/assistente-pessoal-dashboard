@@ -12,9 +12,6 @@ import constants
 import os
 from streamlit_option_menu import option_menu
 
-
-#TODO PROBLEMA A INVESTIGAR - tá buscando os gastos errados - possivelmente trazendo sempre todos os gastos 
-
 st.set_page_config(
     layout="wide",
     page_title=constants.APP_TITLE,

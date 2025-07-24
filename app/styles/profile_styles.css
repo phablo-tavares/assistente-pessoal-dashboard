@@ -91,7 +91,13 @@ span[data-testid="stHeaderActionElements"]{
     font-family: system-ui;
 }
 
+
 .stToolbarActions{
     display: none;
 }
 
+
+
+.container_gzau3_1 ,._profileContainer_gzau_53{
+    display: none;
+}
