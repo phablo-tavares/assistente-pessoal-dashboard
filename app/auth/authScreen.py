@@ -152,7 +152,7 @@ def authScreen():
     
     # Conteúdo do cartão
     with st.container(key='auth-component-container'):
-        option = st.radio(label="", options=["Login", "Cadastro", "Esqueci minha senha"], horizontal=True, label_visibility="collapsed")
+        option = st.radio(label="action", options=["Login", "Cadastro", "Esqueci minha senha"], horizontal=True, label_visibility="collapsed")
 
         st.markdown("<h3 style='text-align: center; color: black; font-size:16px; padding-top:24px ; font-family: system-ui;'>Agente Pessoal</h3>", unsafe_allow_html=True)
         
