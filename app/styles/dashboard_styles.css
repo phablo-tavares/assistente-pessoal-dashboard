@@ -120,3 +120,6 @@ span[data-testid="stHeaderActionElements"]{
     border-color: #F8F8F8;
 }
 
+.stToolbarActions{
+    display: none;
+}

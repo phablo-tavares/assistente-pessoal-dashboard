@@ -90,3 +90,7 @@ span[data-testid="stHeaderActionElements"]{
     font-family: system-ui;
 }
 
+.stToolbarActions{
+    display: none;
+}
+
