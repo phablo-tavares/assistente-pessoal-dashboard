@@ -31,6 +31,7 @@ def calcular_metricas_principais(gastos):
             'maior_gasto_valor': 0,
             'maior_gasto_categoria': 'N/A',
             'categoria_principal_nome': 'N/A',
+            'categoria_principal_percentual': 0,
         }
 
     # Usa o Pandas para facilitar a manipulação dos dados
