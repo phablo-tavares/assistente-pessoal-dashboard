@@ -33,10 +33,14 @@ def formatNumericCpfEditPersonalData():
         st.session_state[key] = re.sub(r'[^0-9]', '', st.session_state[key])
 
 def isWhatsappValid(whatsapp:str):
+    if whatsapp is None:
+        return False
     return len(whatsapp) >= 7
 
 def isCPFValid(cpf:str):
-    return len(cpf) == 11
+    if cpf is None:
+        return False
+    return len(cpf) == 11 
 
 def isWhatsappInUseByOtherUser(whatsapp:str):
     if st.session_state.clientData and st.session_state.clientData.get('phone_number') == whatsapp:
