@@ -19,15 +19,14 @@ span[data-testid="stHeaderActionElements"]{
 }
 
 .st-key-main-container{
-    max-width: 85%;
-    justify-self: center;
+    max-width: 85% !important;
+    align-self: center !important;
+    justify-self: center !important;
 }
 
 
-
-
 .st-key-profile-container{
-    max-width: 672px;
+    max-width: 672px; 
     justify-self: center;
     align-self: center;
 }
@@ -100,17 +99,6 @@ span[data-testid="stHeaderActionElements"]{
 ._container_gzau3_1 ,._profileContainer_gzau3_53{
     display: none;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
