@@ -1,0 +1,17 @@
+# Arquivos e pastas do Git
+.git
+.gitignore
+
+# Arquivos e pastas do VSCode e Devcontainer
+.vscode
+.devcontainer
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de ambiente
+.env
+venv/
