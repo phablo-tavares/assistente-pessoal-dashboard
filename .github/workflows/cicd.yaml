@@ -45,5 +45,5 @@ jobs:
           gcloud run deploy $SERVICE_NAME \
             --image ${{ env.DOCKER_IMAGE_URL }}:latest \
             --platform managed \
-            --region us-east1 \
+            --region us-central1 \
             --allow-unauthenticated
