@@ -42,6 +42,8 @@ span[data-testid="stHeaderActionElements"]{
     padding: 24px;            
     border: 0; 
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    min-width: 600px;
+    overflow: scroll;
 }
 
 
@@ -52,7 +54,7 @@ span[data-testid="stHeaderActionElements"]{
     border-radius: 24px;     
     padding: 24px;            
     border: 0; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 6px #00000026;
     gap: 0;
 }
 .st-key-biggestSpending{
